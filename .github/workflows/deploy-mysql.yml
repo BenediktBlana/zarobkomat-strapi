@@ -29,6 +29,8 @@ jobs:
           
           docker run -d \
             --name mysql-container \
+            --memory 512m \
+            --memory-swap 1g \
             -e MYSQL_ROOT_PASSWORD=strapi \
             -e MYSQL_DATABASE=strapi \
             -e MYSQL_USER=strapi \
