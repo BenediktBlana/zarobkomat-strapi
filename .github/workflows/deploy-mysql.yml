@@ -1,0 +1,44 @@
+name: Run MySQL with Persistent Storage
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  start-mysql-container:
+    runs-on: self-hosted  # Runs on your private server
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Ensure MySQL Volume Exists
+        run: |
+          if ! docker volume ls | grep -q "mysql_data"; then
+            docker volume create mysql_data
+            echo "Docker volume 'mysql_data' created."
+          else
+            echo "Docker volume 'mysql_data' already exists."
+          fi
+
+      - name: Start MySQL Container with Persistent Storage
+        run: |
+          docker stop mysql-container || true  # Stop existing container if running
+          docker rm mysql-container || true   # Remove old container if exists
+          
+          docker run -d \
+            --name mysql-container \
+            -e MYSQL_ROOT_PASSWORD=strapi \
+            -e MYSQL_DATABASE=strapi \
+            -e MYSQL_USER=strapi \
+            -e MYSQL_PASSWORD=strapi \
+            -p 3306:3306 \
+            -v mysql_data:/var/lib/mysql \
+            --restart unless-stopped \
+            mysql:8.0
+
+      - name: Verify MySQL is Running
+        run: |
+          sleep 10  # Wait for MySQL to initialize
+          docker ps | grep mysql-container
